@@ -1,6 +1,5 @@
 import random
 import re
-import ssl
 import warnings
 import nltk
 import spacy
@@ -11,22 +10,16 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 ########################################
-# Download needed NLTK resources
+# NLTK resources should be pre-downloaded via nltk.txt
+# Just verify they're available, don't download at runtime
 ########################################
-def download_nltk_resources():
-    try:
-        _create_unverified_https_context = ssl._create_unverified_context
-    except AttributeError:
-        pass
-    else:
-        ssl._create_default_https_context = _create_unverified_https_context
-
-    resources = ['punkt', 'averaged_perceptron_tagger',
-                 'punkt_tab', 'wordnet', 'averaged_perceptron_tagger_eng']
-    for r in resources:
-        nltk.download(r, quiet=True)
-
-download_nltk_resources()
+try:
+    # Try to use the resources - they should already be downloaded
+    sent_tokenize("Test sentence.")
+    word_tokenize("Test")
+    wordnet.synsets("test")
+except LookupError:
+    st.warning("⚠️ NLTK resources not found. The app may not work correctly.")
 
 ########################################
 # Prepare spaCy pipeline
