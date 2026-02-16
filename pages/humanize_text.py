@@ -56,13 +56,8 @@ def load_spacy_model():
     try:
         return spacy.load("en_core_web_sm")
     except OSError:
-        st.error("⚠️ spaCy model not found. Downloading now...")
-        try:
-            os.system("python -m spacy download en_core_web_sm")
-            return spacy.load("en_core_web_sm")
-        except Exception as e:
-            st.error(f"Could not load spaCy model: {str(e)}")
-            return None
+        st.warning("⚠️ spaCy model not available. Synonym replacement will be disabled.")
+        return None
 
 nlp = load_spacy_model()
 
