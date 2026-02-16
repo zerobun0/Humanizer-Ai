@@ -1,6 +1,7 @@
 import random
 import re
 import warnings
+import os
 import nltk
 import spacy
 import streamlit as st
@@ -10,25 +11,60 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 ########################################
-# NLTK resources should be pre-downloaded via nltk.txt
-# Just verify they're available, don't download at runtime
+# Download NLTK resources if not available
 ########################################
-try:
-    # Try to use the resources - they should already be downloaded
-    sent_tokenize("Test sentence.")
-    word_tokenize("Test")
-    wordnet.synsets("test")
-except LookupError:
-    st.warning("⚠️ NLTK resources not found. The app may not work correctly.")
+@st.cache_resource
+def setup_nltk():
+    """Download required NLTK resources once and cache."""
+    nltk_data_dir = os.path.expanduser('~/nltk_data')
+    if not os.path.exists(nltk_data_dir):
+        os.makedirs(nltk_data_dir, exist_ok=True)
+    
+    resources = [
+        'punkt',
+        'punkt_tab', 
+        'averaged_perceptron_tagger',
+        'averaged_perceptron_tagger_eng',
+        'wordnet',
+        'omw-1.4'
+    ]
+    
+    for resource in resources:
+        try:
+            nltk.data.find(f'tokenizers/{resource}')
+        except LookupError:
+            try:
+                nltk.data.find(f'corpora/{resource}')
+            except LookupError:
+                try:
+                    nltk.data.find(f'taggers/{resource}')
+                except LookupError:
+                    try:
+                        nltk.download(resource, quiet=True, raise_on_error=True)
+                    except Exception as e:
+                        st.warning(f"Could not download {resource}: {str(e)}")
+
+# Initialize NLTK
+setup_nltk()
 
 ########################################
 # Prepare spaCy pipeline
 ########################################
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    st.warning("spaCy en_core_web_sm model not found. Install with: python -m spacy download en_core_web_sm")
-    nlp = None
+@st.cache_resource
+def load_spacy_model():
+    """Load spaCy model and cache it."""
+    try:
+        return spacy.load("en_core_web_sm")
+    except OSError:
+        st.error("⚠️ spaCy model not found. Downloading now...")
+        try:
+            os.system("python -m spacy download en_core_web_sm")
+            return spacy.load("en_core_web_sm")
+        except Exception as e:
+            st.error(f"Could not load spaCy model: {str(e)}")
+            return None
+
+nlp = load_spacy_model()
 
 ########################################
 # Citation Regex
